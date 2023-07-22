@@ -72,7 +72,7 @@ const getUserOpHash = (
 };
 
 const cheapUser = privateKeyToAccount(
-  "0x9d96e2c9193d7298c49ff0c4f31c9381d2891b550af609672f0106674ec7accc"
+  "0x9d96e2c9193d7298c49ff0c4f31c9381d2891b550af609672f0106674ec7ac12"
 );
 const sponsor = privateKeyToAccount(
   (process.env["SPONSOR_PRIVATE_KEY"] as `0x${string}`) || keccak256("0x0")
@@ -187,16 +187,16 @@ const main = async () => {
   });
   const userOpHashWithSig = { ...userOp, signature };
 
-  // const tx = await entrypoint.simulate.simulateValidation([userOpHashWithSig]);
+  const tx = await entrypoint.simulate.simulateValidation([userOpHashWithSig]).catch(x => x);
 
-  const tx = await entrypoint.write.handleOps(
-    [[userOpHashWithSig], sponsor.address],
-    {
-      gas: 5000000n,
-      maxFeePerGas: parseGwei("150"),
-      maxPriorityFeePerGas: parseGwei("35"),
-    }
-  );
+  // const tx = await entrypoint.write.handleOps(
+  //   [[userOpHashWithSig], sponsor.address],
+  //   {
+  //     gas: 5000000n,
+  //     maxFeePerGas: parseGwei("150"),
+  //     maxPriorityFeePerGas: parseGwei("35"),
+  //   }
+  // );
 
   console.log("tx", tx);
   // console.log("sender", sender);
