@@ -1,6 +1,7 @@
 pragma solidity ^0.8.12;
 
 import "./BasePaymaster.sol";
+import "forge-std/console.sol";
 
 contract BackrunningPaymaster is BasePaymaster {
     using SafeERC20 for IERC20;
@@ -22,28 +23,31 @@ contract BackrunningPaymaster is BasePaymaster {
 
     constructor(IEntryPoint _entryPoint) BasePaymaster(_entryPoint) {}
 
-    function parsePaymasterAndData(bytes calldata paymasterAndData) public pure returns(uint48 validUntil, uint48 validAfter, bytes calldata signature) {
-        (validUntil, validAfter) = abi.decode(paymasterAndData[VALID_TIMESTAMP_OFFSET:SIGNATURE_OFFSET],(uint48, uint48));
-        signature = paymasterAndData[SIGNATURE_OFFSET:];
-    }
-
     function _validatePaymasterUserOp(
-        UserOperation calldata /*userOp*/,
+        UserOperation calldata userOp,
         bytes32 /*userOpHash*/,
         uint256 /*requiredPreFund*/
-    )
-        internal
-        override
-        returns (bytes memory context, uint256 validationData)
-    {
-        return ("",_packValidationData(false,0,0));
+    ) internal override returns (bytes memory context, uint256 validationData) {
+        return (userOp.paymasterAndData[20:], _packValidationData(false, 0, 0));
     }
 
     function _postOp(
-        PostOpMode mode,
+        PostOpMode /*mode*/,
         bytes calldata context,
-        uint256 actualGasCost
-    ) internal override {}
+        uint256 /*actualGasCost*/
+    ) internal override {
+        // Univ2CallbackData memory univ2Data = abi.decode(
+        //     context,
+        //     (Univ2CallbackData)
+        // );
+
+        // IUniswapV2Pair(univ2Data.univ2Pair2).swap(
+        //     univ2Data.token > wmatic ? univ2Data.wmaticOut : 0,
+        //     univ2Data.token < wmatic ? univ2Data.wmaticOut : 0,
+        //     address(this),
+        //     context
+        // );
+    }
 
     function uniswapV2Call(
         address /*originalSender*/,
