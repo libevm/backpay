@@ -1,0 +1,15 @@
+{
+	"dependencies": {
+		"@types/node": "^20.4.4",
+		"abitype": "^0.9.5",
+		"concurrently": "^8.2.0",
+		"nodemon": "^3.0.1",
+		"ts-node": "^10.9.1",
+		"typescript": "^5.1.6",
+		"viem": "^1.4.0"
+	},
+	"scripts": {
+		"start": "ts-node src/index.ts",
+		"dev": "nodemon src/index.ts"
+	}
+}
