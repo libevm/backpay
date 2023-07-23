@@ -15,6 +15,11 @@ contract BackrunningPaymasterTest is Test {
     EntryPoint entrypoint;
     SimpleAccountFactory simpleAccountFactory;
 
+    address internal constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+
+    IUniswapV2Factory sushiFactory = IUniswapV2Factory(0xc35DADB65012eC5796536bD9864eD8773aBc74C4);
+    IUniswapV2Factory quickswapFactory = IUniswapV2Factory(0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32);
+
     IUniswapRouter quickswapRouter =
         IUniswapRouter(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff);
     IUniswapRouter sushiRouter =
@@ -117,9 +122,7 @@ contract BackrunningPaymasterTest is Test {
             maxFeePerGas: 1e9,
             maxPriorityFeePerGas: 1e9,
             paymasterAndData: abi.encodePacked(
-                address(paymaster),
-                uint256(42),
-                uint256(88)
+                address(paymaster)
             ),
             signature: new bytes(0)
         });
@@ -157,6 +160,15 @@ contract BackrunningPaymasterTest is Test {
             0,
             swapCalldata
         );
+
+        // User sold WEENUS on sushi, causing price to crash on sushi
+        // So, we buy WEENUS on sushi and sell on quickswap
+        // Flashloan MATIC on quickswap, buy WEENUS on sushi
+        // Refund quickswap with weenus
+
+        address pair1 = sushiFactory.getPair(address(weenus), WMATIC);
+        address pair2 = quickswapFactory.getPair(address(weenus), WMATIC);
+
         UserOperation memory swapUserOps = UserOperation({
             sender: smartContractWallet,
             nonce: nonce,
@@ -169,8 +181,13 @@ contract BackrunningPaymasterTest is Test {
             maxPriorityFeePerGas: 1e9,
             paymasterAndData: abi.encodePacked(
                 address(paymaster),
-                uint256(42),
-                uint256(88)
+                abi.encode(
+                    address(weenus),
+                    address(pair1),
+                    address(pair2),
+                    uint256(0.1e9),
+                    address(this)
+                )
             ),
             signature: new bytes(0)
         });

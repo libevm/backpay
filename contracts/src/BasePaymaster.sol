@@ -2391,11 +2391,3 @@ pragma solidity ^0.8.12;
 /* solhint-disable reason-string */
 /* solhint-disable no-inline-assembly */
 
-interface IUniswapV2Pair {
-    function swap(
-        uint256 amount0Out,
-        uint256 amount1Out,
-        address to,
-        bytes calldata data
-    ) external;
-}
