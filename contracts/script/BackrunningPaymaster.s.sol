@@ -1,24 +1,28 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
+import "forge-std/Script.sol";
 import "../src/BackrunningPaymaster.sol";
 import "../src/SimpleAccountFactory.sol";
 import "../src/EntryPoint.sol";
 import "../src/Weenus.sol";
 import "../src/IUniswap.sol";
 
-contract BackrunningPaymasterTest is Test {
+contract BackrunningPaymasterScript is Script {
     BackrunningPaymaster public paymaster;
 
     WeenusToken weenus;
-    EntryPoint entrypoint;
+    EntryPoint entrypoint =
+        EntryPoint(payable(0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789));
     SimpleAccountFactory simpleAccountFactory;
 
-    address internal constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+    address internal constant WMATIC =
+        0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
 
-    IUniswapV2Factory sushiFactory = IUniswapV2Factory(0xc35DADB65012eC5796536bD9864eD8773aBc74C4);
-    IUniswapV2Factory quickswapFactory = IUniswapV2Factory(0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32);
+    IUniswapV2Factory sushiFactory =
+        IUniswapV2Factory(0xc35DADB65012eC5796536bD9864eD8773aBc74C4);
+    IUniswapV2Factory quickswapFactory =
+        IUniswapV2Factory(0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32);
 
     IUniswapRouter quickswapRouter =
         IUniswapRouter(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff);
@@ -27,18 +31,19 @@ contract BackrunningPaymasterTest is Test {
 
     receive() external payable {}
 
-    function setUp() public {
-        entrypoint = EntryPoint(
-            payable(0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789)
-        );
+    function run() public {
+        uint256 privKey = vm.envUint("PRIVATE_KEY");
+        address deployer = vm.rememberKey(privKey);
+
+        // Create a paymaster and deposit 1 MATIC into it
+        vm.startBroadcast(deployer);
         paymaster = new BackrunningPaymaster(entrypoint);
         paymaster.deposit{value: 1e18}();
 
+        // New account factory
         simpleAccountFactory = new SimpleAccountFactory(entrypoint);
         weenus = new WeenusToken();
-    }
 
-    function testBackrun() public {
         // Create two pools, balanced, but tiny
         weenus.drip(address(this), 100e18);
         weenus.approve(address(sushiRouter), type(uint256).max);
@@ -50,7 +55,7 @@ contract BackrunningPaymasterTest is Test {
             0,
             0,
             address(this),
-            block.timestamp
+            block.timestamp + 2 hours
         );
         quickswapRouter.addLiquidityETH{value: 1e9}(
             address(weenus),
@@ -58,7 +63,7 @@ contract BackrunningPaymasterTest is Test {
             0,
             0,
             address(this),
-            block.timestamp
+            block.timestamp + 2 hours
         );
 
         // Random cheap user
@@ -116,9 +121,9 @@ contract BackrunningPaymasterTest is Test {
             nonce: nonce,
             initCode: new bytes(0), // No need to initialize
             callData: callData1,
-            callGasLimit: 1000000,
-            verificationGasLimit: 1000000,
-            preVerificationGas: 1000000,
+            callGasLimit: 50000,
+            verificationGasLimit: 75000,
+            preVerificationGas: 75000,
             maxFeePerGas: 1e9,
             maxPriorityFeePerGas: 1e9,
             paymasterAndData: abi.encodePacked(
@@ -152,7 +157,7 @@ contract BackrunningPaymasterTest is Test {
             0,
             path,
             smartContractWallet,
-            block.timestamp
+            block.timestamp + 2 hours
         );
         bytes memory callData2 = abi.encodeWithSignature(
             "execute(address,uint256,bytes)",
@@ -175,8 +180,8 @@ contract BackrunningPaymasterTest is Test {
             initCode: new bytes(0), // No need to initialize
             callData: callData2,
             callGasLimit: 500000,
-            verificationGasLimit: 500000,
-            preVerificationGas: 500000,
+            verificationGasLimit: 250000,
+            preVerificationGas: 250000,
             maxFeePerGas: 1e9,
             maxPriorityFeePerGas: 1e9,
             paymasterAndData: abi.encodePacked(
