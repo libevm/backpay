@@ -1,5 +1,5 @@
 # backpay
-Backrunning Paymaster Example
+Backrunning Paymaster Example. Deprecated to test in Solidity.
 
 ```bash
 # Polygon
